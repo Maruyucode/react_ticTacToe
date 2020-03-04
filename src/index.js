@@ -1,6 +1,77 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createStore } from 'redux';
+import { Provider } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import './index.css';
+
+
+/*
+ *   redux
+ */
+
+// Game のコンストラクター部分のthis.stateに対応
+let initState = {
+    history: [{
+        squares: Array(9).fill(null),
+    }],
+    stepNumber: 0,
+    xIsNext: true,
+};
+
+// ACTION
+const qlick_square = (index) => {
+    return {
+        type: 'QLICK_SQUARE',
+        index,
+    }
+}
+
+// REDUCER
+
+const clickReducer = (state = initState, action) => {
+
+    switch (action.type) {
+
+        case 'QLICK_SQUARE':
+            // handleClickイベントが起きた時の処理？
+            const history = state.history.slice(0, state.stepNumber + 1);
+            const current = history[history.length - 1];
+            const squares = current.squares.slice();
+            if (calculateWinner(squares) || squares[action.index]) {
+                return;
+            }
+            squares[action.index] = state.xIsNext ? 'X' : 'O';
+            return {
+                history: history.concat([{
+                    squares: squares,
+                }]),
+                stepNumber: history.length,
+                xIsNext: !state.xIsNext,
+            }
+        
+        default:
+            return state;
+    }
+}
+
+// STORE
+let store = createStore(
+    clickReducer,
+    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+);
+
+
+// // handleClick()でdsispatch を実行
+// // store.subscribe(() => console.log('test'));
+// store.subscribe(() => console.log(store.getState()));
+
+// // DISPATCH
+// store.dispatch(qlick_square(/* index */));
+
+
+// =====================================================
+
 
 function Square(props) {
     return (
@@ -27,7 +98,6 @@ class Board extends React.Component {
     render() {
         return (
             <div>
-               
                 <div className="board-row">
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -48,6 +118,7 @@ class Board extends React.Component {
     }
 }
 
+// ここで store が使えるようになる
 class Game extends React.Component {
     constructor(props) {
         super(props);
@@ -60,29 +131,40 @@ class Game extends React.Component {
         };
     }
 
+    // redux storeを使うための準備
+    // const reduxobj = useSelector(state => state.history.stepNumber);
+    // ? useSelectorで値がとれない、、
+
     jumpTo(step) {
-        console.log('JUMP');
         this.setState({
             stepNumber: step,
             xIsNext: (step % 2) === 0,
         });
     }
 
+    // QLICK_SQUAREのstate変更がおこるトリガーはここ
     handleClick(i) {
-        const history = this.state.history.slice(0,this.state.stepNumber + 1);
-        const current = history[history.length - 1];
-        const squares = current.squares.slice();
-        if (calculateWinner(squares) || squares[i]) {
-            return;
-        }
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
-        this.setState({
-            history: history.concat([{
-                squares: squares,
-            }]),
-            stepNumber: history.length,
-            xIsNext: !this.state.xIsNext,
-        });
+        // store.subscribe(() => console.log('test'));
+        store.subscribe(() => console.log(store.getState()));
+        // DISPATCH
+        store.dispatch(qlick_square(i));
+
+        // 
+
+        // const history = this.state.history.slice(0,this.state.stepNumber + 1);
+        // const current = history[history.length - 1];
+        // const squares = current.squares.slice();
+        // if (calculateWinner(squares) || squares[i]) {
+        //     return;
+        // }
+        // squares[i] = this.state.xIsNext ? 'X' : 'O';
+        // this.setState({
+        //     history: history.concat([{
+        //         squares: squares,
+        //     }]),
+        //     stepNumber: history.length,
+        //     xIsNext: !this.state.xIsNext,
+        // });
     }
 
     render() {
@@ -121,6 +203,9 @@ class Game extends React.Component {
                     <div>{status}</div>
                     <ol>{moves}</ol>
                 </div>
+                <div>
+                    {this.reduxobj}
+                </div>
             </div>
         );
     }
@@ -130,7 +215,11 @@ class Game extends React.Component {
 // ========================================
 
 ReactDOM.render(
-    <Game />,
+    // Gameコンポーネントのなかで store の値を利用できるようになる
+    // <Game store={store} />,
+    <Provider>
+        <Game store={store} />
+    </Provider>,
     document.getElementById('root')
 );
 
