@@ -132,7 +132,7 @@ class Game extends React.Component {
     }
 
     // redux storeを使うための準備
-    // const reduxobj = useSelector(state => state.history.stepNumber);
+    reduxobj = useSelector(state => state.history);
     // ? useSelectorで値がとれない、、
 
     jumpTo(step) {
@@ -168,6 +168,9 @@ class Game extends React.Component {
     }
 
     render() {
+        //
+        console.log(this.reduxobj);
+
         const history = this.state.history;
         const current = history[this.state.stepNumber];
         const winner = calculateWinner(current.squares);
@@ -204,7 +207,7 @@ class Game extends React.Component {
                     <ol>{moves}</ol>
                 </div>
                 <div>
-                    {this.reduxobj}
+                   
                 </div>
             </div>
         );
@@ -217,8 +220,8 @@ class Game extends React.Component {
 ReactDOM.render(
     // Gameコンポーネントのなかで store の値を利用できるようになる
     // <Game store={store} />,
-    <Provider>
-        <Game store={store} />
+    <Provider store={store}>
+        <Game />
     </Provider>,
     document.getElementById('root')
 );
